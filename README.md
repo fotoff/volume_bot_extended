@@ -1,192 +1,193 @@
 # Extended Trading Bot v2 - X10 Starknet
 
-Advanced cryptocurrency trading bot for X10 exchange on Starknet network with multi-branch strategy and intelligent "buy on rise" algorithm.
+Продвинутый торговый бот для биржи X10 на сети Starknet с многоветочной стратегией и алгоритмом "покупка на росте".
 
-## 🚀 Features
+## 🚀 Возможности
 
-- **"Buy on Rise" Strategy**: Automatic order placement when price rises by a configured percentage
-- **Multi-Branch System**: Each purchase creates an independent branch with its own SELL orders and stop-loss
-- **Sell Ladder**: Automatic placement of 3 SELL orders at different profit levels
-- **Adaptive Stop-Loss**: Loss protection for each individual branch
-- **Multi-Pair Trading**: Support for trading multiple pairs simultaneously
-- **State Persistence**: State preservation between restarts
-- **Order Re-placement**: Automatic re-placement of unfilled orders closer to market
-- **Position Tracking**: Real-time monitoring and mismatch detection
-- **TTL Management**: Time-to-live handling for buy orders
+- **Стратегия "Покупка на росте"**: Автоматическое размещение ордеров при росте цены на заданный процент
+- **Многоветочная система**: Каждая покупка создает независимую ветку с собственными SELL ордерами и стоп-лоссом
+- **Лесенка продаж**: Автоматическое размещение 3 SELL ордеров на разных уровнях прибыли
+- **Адаптивный стоп-лосс**: Защита от потерь для каждой отдельной ветки
+- **Торговля несколькими парами**: Поддержка одновременной торговли множественными парами
+- **Сохранение состояния**: Восстановление состояния между перезапусками
+- **Переразмещение ордеров**: Автоматическое переразмещение неисполненных ордеров ближе к рынку
+- **Отслеживание позиций**: Мониторинг расхождений и детекция ошибок в реальном времени
+- **Управление TTL**: Обработка времени жизни buy ордеров
 
-## 📊 Supported Trading Pairs
+## 📊 Поддерживаемые торговые пары
 
-| Pair | Rise Trigger | Sell Levels | Notes |
+| Пара | Триггер роста | Уровни продажи | Примечания |
 |------|-------------|-------------|--------|
-| **BTC-USD** | 0.3% | [0.3%, 0.6%, 0.9%] | Primary pair |
-| **ETH-USD** | 0.4% | [0.4%, 0.8%, 1.2%] | Major altcoin |
-| **SOL-USD** | 0.5% | [0.5%, 1.0%, 1.5%] | High volatility |
-| **OP-USD** | 0.6% | [0.6%, 1.2%, 1.8%] | Layer 2 token |
-| **HYPE-USD** | 0.3% | [0.2%, 0.4%, 0.6%] | Optimized settings |
-| **DOGE-USD** | 0.8% | [0.8%, 1.6%, 2.4%] | Meme coin |
+| **BTC-USD** | 0.3% | [0.3%, 0.6%, 0.9%] | Основная пара |
+| **ETH-USD** | 0.4% | [0.4%, 0.8%, 1.2%] | Крупный альткоин |
+| **SOL-USD** | 0.5% | [0.5%, 1.0%, 1.5%] | Высокая волатильность |
+| **OP-USD** | 0.6% | [0.6%, 1.2%, 1.8%] | Layer 2 токен |
+| **HYPE-USD** | 0.3% | [0.2%, 0.4%, 0.6%] | Оптимизированные настройки |
+| **DOGE-USD** | 0.8% | [0.8%, 1.6%, 2.4%] | Мем-коин |
 
-## 🏗️ Architecture
+## 🏗️ Архитектура
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Price Monitor │───▶│  Anchor Tracker │───▶│  Buy Trigger    │
+│ Мониторинг цены │───▶│ Трекер якоря    │───▶│ Триггер покупки │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                          │
                                                          ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Stop Loss     │◀───│  Branch Manager │◀───│  Order Placer   │
+│   Стоп-лосс     │◀───│ Менеджер веток  │◀───│ Размещение      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                                 ▼
                        ┌─────────────────┐
-                       │  State Manager  │
+                       │ Менеджер        │
+                       │ состояния       │
                        └─────────────────┘
 ```
 
-## 🔧 Installation
+## 🔧 Установка
 
-### Prerequisites
+### Системные требования
 
 - Python 3.8+
-- X10 Starknet API access
-- Linux/macOS environment (recommended)
+- Доступ к API X10 Starknet
+- Linux/macOS окружение (рекомендуется)
 
-### Environment Setup
+### Настройка окружения
 
-1. **Clone the repository:**
+1. **Клонирование репозитория:**
 ```bash
-git clone https://github.com/your-username/extended-bot-v2.git
-cd extended-bot-v2
+git clone https://github.com/fotoff/volume_bot_extended.git
+cd volume_bot_extended
 ```
 
-2. **Create virtual environment:**
+2. **Создание виртуального окружения:**
 ```bash
 python3 -m venv bot-env
 source bot-env/bin/activate  # Linux/macOS
-# or bot-env\Scripts\activate  # Windows
+# или bot-env\Scripts\activate  # Windows
 ```
 
-3. **Install dependencies:**
+3. **Установка зависимостей:**
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Configure environment variables:**
+4. **Настройка переменных окружения:**
 ```bash
 cp env.example .env
-# Edit .env file with your API credentials
+# Отредактируйте .env файл с вашими API ключами
 ```
 
-### Environment Variables
+### Переменные окружения
 
-Create a `.env` file with the following variables:
+Создайте файл `.env` со следующими переменными:
 
 ```env
-EXTENDED_API_KEY=your_api_key_here
-EXTENDED_PUBLIC_KEY=your_public_key_here
-EXTENDED_STARK_PRIVATE=your_private_key_here
-EXTENDED_VAULT_ID=your_vault_id_here
+EXTENDED_API_KEY=ваш_api_ключ
+EXTENDED_PUBLIC_KEY=ваш_публичный_ключ
+EXTENDED_STARK_PRIVATE=ваш_приватный_ключ
+EXTENDED_VAULT_ID=ваш_vault_id
 BOT_STATE_FILE=bot_state.json
 ```
 
-## ⚙️ Configuration
+## ⚙️ Конфигурация
 
-### Main Configuration (`config.py`)
+### Основная конфигурация (`config.py`)
 
-Key parameters you can adjust:
+Ключевые параметры для настройки:
 
-- **`MARKETS`**: Active trading pairs
-- **`BUY_QTY`**: Purchase size for each pair
-- **`BUY6_STEP_PCT`**: Rise percentage trigger for purchases
-- **`SELL_STEPS_PCT`**: Profit levels for sales
-- **`BRANCH_SL_PCT`**: Stop-loss percentage for each branch
-- **`BUY_TTL_SECONDS`**: Time-to-live for buy orders (default: 300s)
+- **`MARKETS`**: Активные торговые пары
+- **`BUY_QTY`**: Размер покупки для каждой пары
+- **`BUY6_STEP_PCT`**: Процент роста для триггера покупок
+- **`SELL_STEPS_PCT`**: Уровни прибыли для продаж
+- **`BRANCH_SL_PCT`**: Процент стоп-лосса для каждой ветки
+- **`BUY_TTL_SECONDS`**: Время жизни buy ордеров (по умолчанию: 300с)
 
-### Example Configuration
+### Пример конфигурации
 
 ```python
 MARKETS = ["BTC-USD", "HYPE-USD"]
 
 BUY_QTY = {
-    "BTC-USD": 0.0004,   # 0.0004 BTC per trade
-    "HYPE-USD": 1.0,     # 1.0 HYPE per trade
+    "BTC-USD": 0.0004,   # 0.0004 BTC за сделку
+    "HYPE-USD": 1.0,     # 1.0 HYPE за сделку
 }
 
 BUY6_STEP_PCT = {
-    "BTC-USD": 0.003,    # 0.3% rise trigger
-    "HYPE-USD": 0.003,   # 0.3% rise trigger
+    "BTC-USD": 0.003,    # 0.3% триггер роста
+    "HYPE-USD": 0.003,   # 0.3% триггер роста
 }
 ```
 
-## 🚀 Running the Bot
+## 🚀 Запуск бота
 
-### Local Development
+### Локальная разработка
 
 ```bash
 source bot-env/bin/activate
 python extended-bot-v2.py
 ```
 
-### Production Deployment (systemd)
+### Продакшн развертывание (systemd)
 
-1. **Create service file:**
+1. **Создание service файла:**
 ```bash
 sudo cp extended-bot-rise.service /etc/systemd/system/
 sudo systemctl daemon-reload
 ```
 
-2. **Enable and start service:**
+2. **Включение и запуск сервиса:**
 ```bash
 sudo systemctl enable extended-bot-rise
 sudo systemctl start extended-bot-rise
 ```
 
-3. **Monitor status:**
+3. **Мониторинг статуса:**
 ```bash
 systemctl status extended-bot-rise
 journalctl -u extended-bot-rise -f
 ```
 
-## 📈 Trading Strategy
+## 📈 Торговая стратегия
 
-### Buy Algorithm
+### Алгоритм покупки
 
-1. **Anchor Tracking**: Bot tracks minimum price (anchor) for each pair
-2. **Rise Detection**: When price rises by configured percentage from anchor
-3. **Order Placement**: Places limit BUY order at current bid
-4. **Branch Creation**: After fill, creates new independent branch
+1. **Отслеживание якоря**: Бот отслеживает минимальную цену (якорь) для каждой пары
+2. **Детекция роста**: При росте цены на заданный процент от якоря
+3. **Размещение ордера**: Размещает лимитный BUY ордер по текущему bid
+4. **Создание ветки**: После исполнения создает новую независимую ветку
 
-### Branch Management
+### Управление ветками
 
-Each branch operates independently with:
-- **Unique ID**: Sequential numbering per symbol
-- **Buy Price & Size**: Original purchase details
-- **WAP (Weighted Average Price)**: For multiple fills
-- **Stop-Loss**: Individual protection level
-- **Sell Ladder**: 3 SELL orders at different profit levels
+Каждая ветка работает независимо с:
+- **Уникальным ID**: Последовательная нумерация по символу
+- **Ценой и размером покупки**: Детали оригинальной покупки
+- **WAP (Средневзвешенная цена)**: Для множественных исполнений
+- **Стоп-лоссом**: Индивидуальный уровень защиты
+- **Лесенкой продаж**: 3 SELL ордера на разных уровнях прибыли
 
-### Order Management
+### Управление ордерами
 
-- **TTL Protection**: Buy orders auto-replaced if expired
-- **Partial Fill Handling**: Remaining size re-placed closer to market
-- **Deduplication**: Prevents multiple SELL orders per leg
-- **Position Reconciliation**: Automatic mismatch detection and logging
+- **Защита TTL**: Buy ордера автоматически переразмещаются при истечении
+- **Обработка частичных исполнений**: Остаток переразмещается ближе к рынку
+- **Дедупликация**: Предотвращает множественные SELL ордера на leg
+- **Сверка позиций**: Автоматическая детекция расхождений и логирование
 
-## 🔍 Monitoring & Logging
+## 🔍 Мониторинг и логирование
 
-### Log Categories
+### Категории логов
 
-| Icon | Type | Description |
+| Иконка | Тип | Описание |
 |------|------|-------------|
-| 📈 | Price | Price monitoring and anchor updates |
-| 🟢 | Buy | Buy order placement |
-| 🆕 | Branch | New branch creation |
-| 🟠 | Sell | Sell order placement |
-| 🛑 | Stop-Loss | Stop-loss execution |
-| ⚠️ | Warning | Position mismatches |
-| 🔄 | State | Branch state changes |
+| 📈 | Цена | Мониторинг цены и обновления якоря |
+| 🟢 | Покупка | Размещение buy ордеров |
+| 🆕 | Ветка | Создание новой ветки |
+| 🟠 | Продажа | Размещение sell ордеров |
+| 🛑 | Стоп-лосс | Исполнение стоп-лосса |
+| ⚠️ | Предупреждение | Расхождения позиций |
+| 🔄 | Состояние | Изменения состояния веток |
 
-### Example Log Output
+### Пример вывода логов
 
 ```
 [BTC-USD] 📈 last=112593 | pos=0 WAP=0 | branches=0
@@ -196,102 +197,102 @@ Each branch operates independently with:
 [HYPE-USD] 🟠 SELL L1 ветки 1 0.3@42.0
 ```
 
-### State Management
+### Управление состоянием
 
-The bot maintains persistent state in `bot_state.json`:
-- Branch information and timestamps
-- Anchor prices for each symbol
-- Next branch ID counters
+Бот поддерживает постоянное состояние в `bot_state.json`:
+- Информация о ветках и временные метки
+- Цены якорей для каждого символа
+- Счетчики следующих ID веток
 
-## 🔧 Management Commands
+## 🔧 Команды управления
 
-### Service Control
+### Управление сервисом
 
 ```bash
-# Status check
+# Проверка статуса
 systemctl status extended-bot-rise
 
-# View logs
+# Просмотр логов
 journalctl -u extended-bot-rise -f
 journalctl -u extended-bot-rise --lines=50
 
-# Control service
+# Управление сервисом
 systemctl start extended-bot-rise
 systemctl stop extended-bot-rise
 systemctl restart extended-bot-rise
 ```
 
-### Manual Operations
+### Ручные операции
 
 ```bash
-# Clear state (fresh start)
+# Очистка состояния (свежий старт)
 rm bot_state.json
 
-# Check configuration
+# Проверка конфигурации
 python -c "from config import *; print(f'Markets: {MARKETS}')"
 
-# Validate environment
+# Валидация окружения
 python -c "from dotenv import load_dotenv; import os; load_dotenv(); print('API Key:', os.getenv('EXTENDED_API_KEY')[:10] + '...')"
 ```
 
-## 🔧 Troubleshooting
+## 🔧 Устранение неполадок
 
-### Common Issues
+### Частые проблемы
 
-1. **Position Mismatch**
-   - Symptom: `⚠️ РАСХОЖДЕНИЕ: ветки=X, позиция=Y`
-   - Cause: State reset while position exists
-   - Solution: Bot auto-detects and logs, consider manual position management
+1. **Расхождение позиций**
+   - Симптом: `⚠️ РАСХОЖДЕНИЕ: ветки=X, позиция=Y`
+   - Причина: Сброс состояния при существующей позиции
+   - Решение: Бот автоматически детектирует и логирует, рассмотрите ручное управление позицией
 
-2. **Orders Not Placed**
-   - Check: Real position > 0 and active branches exist
-   - Verify: API credentials and permissions
-   - Monitor: 30-second SELL check intervals
+2. **Ордера не размещаются**
+   - Проверьте: Реальная позиция > 0 и существуют активные ветки
+   - Проверьте: API учетные данные и разрешения
+   - Мониторьте: 30-секундные интервалы проверки SELL
 
-3. **TTL Expiration**
-   - Symptom: `🔁 Переразмещаем BUY ближе к рынку`
-   - Normal: Automatic re-placement closer to bid
-   - Monitor: Ensure eventual fill
+3. **Истечение TTL**
+   - Симптом: `🔁 Переразмещаем BUY ближе к рынку`
+   - Нормально: Автоматическое переразмещение ближе к bid
+   - Мониторьте: Обеспечьте итоговое исполнение
 
-### Performance Optimization
+### Оптимизация производительности
 
-- **Tick Frequency**: Adjust `TICK_SECONDS` for responsiveness vs. API limits
-- **TTL Duration**: Balance `BUY_TTL_SECONDS` for market conditions
-- **Position Sizing**: Configure appropriate `BUY_QTY` for account size
+- **Частота тиков**: Настройте `TICK_SECONDS` для баланса отзывчивости и лимитов API
+- **Длительность TTL**: Балансируйте `BUY_TTL_SECONDS` под рыночные условия
+- **Размер позиций**: Настройте подходящие `BUY_QTY` для размера аккаунта
 
-## 🔒 Security Considerations
+## 🔒 Соображения безопасности
 
-- **API Keys**: Store securely in `.env` file, never commit to repository
-- **Permissions**: Use trading-only API keys when possible
-- **Monitoring**: Regular checks on bot behavior and positions
-- **Risk Management**: Set appropriate position sizes and stop-losses
+- **API ключи**: Храните безопасно в `.env` файле, никогда не коммитьте в репозиторий
+- **Разрешения**: Используйте API ключи только для торговли когда возможно
+- **Мониторинг**: Регулярные проверки поведения бота и позиций
+- **Управление рисками**: Устанавливайте подходящие размеры позиций и стоп-лоссы
 
-## ⚠️ Risk Disclaimer
+## ⚠️ Предупреждение о рисках
 
-- **High Risk**: Cryptocurrency trading involves substantial risk of loss
-- **Automated Trading**: Bot decisions may not align with market conditions
-- **Testing**: Always test with small amounts first
-- **Monitoring**: Regular supervision recommended
-- **No Guarantees**: Past performance does not guarantee future results
+- **Высокий риск**: Торговля криптовалютами включает существенный риск потерь
+- **Автоматизированная торговля**: Решения бота могут не соответствовать рыночным условиям
+- **Тестирование**: Всегда тестируйте сначала с небольшими суммами
+- **Мониторинг**: Рекомендуется регулярный контроль
+- **Никаких гарантий**: Прошлые результаты не гарантируют будущие результаты
 
-## 🤝 Contributing
+## 🤝 Участие в проекте
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+1. Форкните репозиторий
+2. Создайте ветку функции (`git checkout -b feature/amazing-feature`)
+3. Закоммитьте изменения (`git commit -m 'Add amazing feature'`)
+4. Отправьте в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
 
-## 📝 License
+## 📝 Лицензия
 
-This project is for educational purposes only. Use at your own risk.
+Этот проект предназначен только для образовательных целей. Используйте на свой страх и риск.
 
-## 📞 Support
+## 📞 Поддержка
 
-- **Issues**: Create GitHub Issues for bugs and feature requests
-- **Discussions**: Use GitHub Discussions for questions
-- **Documentation**: Check `docs/` folder for detailed guides
+- **Issues**: Создавайте GitHub Issues для багов и запросов функций
+- **Обсуждения**: Используйте GitHub Discussions для вопросов
+- **Документация**: Проверьте папку `docs/` для детальных руководств
 
 ---
 
-**⚡ Built with Python • 🚀 Powered by Starknet • 📈 Optimized for X10**
+**⚡ Создано на Python • 🚀 Работает на Starknet • 📈 Оптимизировано для X10**
