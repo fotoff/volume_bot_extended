@@ -551,31 +551,31 @@ class Bot:
         branch_wap = b.wap if b.wap else b.buy_price
         pnl_floor = branch_wap * (Decimal("1") + Decimal(str(PNL_MIN_PCT)))
 
-        for leg_name, leg in b.sells.items():
+            for leg_name, leg in b.sells.items():
             existing_order = open_by_cid.get(leg.client_id) if leg.client_id else None
             if existing_order:
                 continue
             
             # PnL защита: селл ордера только выше WAP
-            target = b.buy_price * (Decimal("1") + leg.target_pct)
+                target = b.buy_price * (Decimal("1") + leg.target_pct)
             if target <= branch_wap:
                 self.log(symbol, f"⚠️ Пропускаем {leg_name} - target {target} <= WAP {branch_wap}")
-                continue
-                
+                        continue
+
             min_price = rprice(symbol, max(target, pnl_floor))
-            remaining = b.size - placed_total
-            if remaining <= 0:
-                continue
-            place_size = min(leg.size, remaining)
-            if place_size <= 0:
-                continue
-            cid = f"{symbol}:BR{b.branch_id}:S:{leg_name}:{uuid.uuid4().hex[:6]}"
+                remaining = b.size - placed_total
+                if remaining <= 0:
+                    continue
+                place_size = min(leg.size, remaining)
+                if place_size <= 0:
+                    continue
+                cid = f"{symbol}:BR{b.branch_id}:S:{leg_name}:{uuid.uuid4().hex[:6]}"
             oid = await self.place_limit(symbol, OrderSide.SELL, min_price, rsize(symbol, place_size), cid, ttl_seconds=SELL_TTL_SECONDS)
-            if oid:
+                if oid:
                 leg.client_id = cid
                 leg.order_id = oid
                 leg.price = min_price
-                placed_total += place_size
+                    placed_total += place_size
                 self.log(symbol, f"🟠 SELL {leg_name} ветки {b.branch_id} {place_size}@{min_price} (PnL защита: {pnl_floor})")
                 self.update_branch_timestamp(symbol, b.branch_id)
                 # Сохраняем client_id, чтобы не потерять связь после рестартов
@@ -599,10 +599,10 @@ class Bot:
         for o in opens:
             client_id = str(getattr(o, "external_id", "") or "")
             if f":BR{branch_id}:S:" in client_id:
-                try:
-                    await self.cancel_order(int(getattr(o, "id")))
+            try:
+                await self.cancel_order(int(getattr(o, "id")))
                     cancelled += 1
-                except Exception as e:
+            except Exception as e:
                     self.log(symbol, f"❌ Ошибка отмены SELL ветки {branch_id}: {e}")
         if cancelled:
             self.log(symbol, f"🧹 Отменено {cancelled} SELL для ветки {branch_id}")
@@ -627,7 +627,7 @@ class Bot:
 
         # Проверяем позицию спустя короткое ожидание
         await asyncio.sleep(1.0)
-        cur_pos, _ = await self.position(symbol)
+                cur_pos, _ = await self.position(symbol)
         if cur_pos <= Decimal("0"):
             await self._cancel_branch_sells(symbol, b.branch_id)
             b.active = False
@@ -644,7 +644,7 @@ class Bot:
         """Проверяет TTL селл ордеров и переразмещает их если нужно"""
         if not self.has_active(symbol):
             return
-            
+
         opens = await self.open_orders(symbol, side=OrderSide.SELL)
         current_time = asyncio.get_event_loop().time()
         
@@ -669,12 +669,12 @@ class Bot:
                                     self.log(symbol, f"⏰ TTL истек для SELL {leg_name} ветки {branch_id}, переразмещаем")
                                     
                                     # Отменяем старый ордер
-                                    try:
-                                        await self.cancel_order(int(getattr(o, "id")))
+                try:
+                    await self.cancel_order(int(getattr(o, "id")))
                                         leg.client_id = None
                                         leg.order_id = None
                                         leg.price = None
-                                    except Exception as e:
+                except Exception as e:
                                         self.log(symbol, f"❌ Ошибка отмены TTL SELL: {e}")
                                         continue
                                     
