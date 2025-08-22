@@ -1,0 +1,115 @@
+# Extended Trading Bot v2 - .gitignore
+
+# Environment and Secrets
+.env
+.env.local
+.env.production
+*.key
+api_keys.txt
+
+# Bot State and Data
+bot_state.json
+*.log
+logs/
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+bot-env/
+venv/
+ENV/
+env/
+.venv
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Documentation
+.sphinx/
+docs/_build/
+
+# Temporary Files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Trading Bot Specific
+# Backup files
+*.backup
+*.bak
+backups/
+
+# Local configuration overrides
+config_local.py
+local_settings.py
+
+# Server deployment files (if not needed in repo)
+systemd/
+deployment/
+
+# SSH keys and certificates
+*.pem
+*.p12
+*.pfx
+ssh_keys/
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Custom scripts (if sensitive)
+deploy.sh
+secrets/

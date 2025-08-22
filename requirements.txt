@@ -1,0 +1,48 @@
+# Extended Trading Bot v2 - Dependencies
+
+# Core Dependencies
+python-dotenv>=0.19.0        # Environment variable management
+aiohttp>=3.8.0               # Async HTTP client
+asyncio-throttle>=1.0.2      # Rate limiting support
+
+# X10 Starknet Integration
+# Note: Install X10 Python SDK according to their documentation
+# This may require additional steps or private repositories
+
+# Data Processing
+decimal>=1.0.0               # Precise decimal arithmetic (built-in)
+
+# System Integration
+systemd-python>=234          # Systemd integration (Linux only)
+
+# Development Dependencies (optional)
+# Uncomment for development environment:
+# pytest>=7.0.0              # Testing framework
+# pytest-asyncio>=0.21.0     # Async testing support
+# black>=22.0.0               # Code formatting
+# flake8>=4.0.0               # Linting
+# mypy>=0.950                 # Type checking
+# pre-commit>=2.17.0          # Pre-commit hooks
+
+# Security and Monitoring (optional)
+# requests>=2.28.0           # HTTP requests for health checks
+# psutil>=5.9.0              # System monitoring
+# cryptography>=3.4.8       # Enhanced security features
+
+# Note: X10 Starknet SDK Installation
+# The X10 Perpetual Trading SDK is required but may not be available on PyPI.
+# Please follow the official X10 documentation for installation:
+# 1. Contact X10 for SDK access
+# 2. Install according to their provided instructions
+# 3. Ensure the following imports work:
+#    - from x10.perpetual.accounts import StarkPerpetualAccount
+#    - from x10.perpetual.trading_client.trading_client import PerpetualTradingClient
+#    - from x10.perpetual.configuration import STARKNET_MAINNET_CONFIG
+#    - from x10.perpetual.orders import OrderSide, TimeInForce
+#    - from x10.perpetual.positions import PositionSide
+
+# Installation Command:
+# pip install -r requirements.txt
+
+# For development:
+# pip install -r requirements.txt -r requirements-dev.txt
