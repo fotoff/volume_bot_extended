@@ -1,121 +1,156 @@
-# Deployment Guide - Extended Trading Bot v2
+# 🚀 Руководство по развертыванию Extended Bot v2
 
-This guide covers deployment of the Extended Trading Bot v2 to production servers.
+## 📋 Обзор
 
-## 🚀 Quick Deployment
+**Extended Bot v2** - это продвинутый криптовалютный торговый бот с автоматической защитой прибыли (PnL) и управлением временем жизни ордеров (TTL). Данное руководство описывает процесс развертывания бота на Linux сервере.
 
-### Server Requirements
+## 🎯 Новые возможности v2.1
 
-- **OS**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
+### TTL для SELL ордеров (30 дней)
+- Автоматическое переразмещение SELL ордеров при истечении TTL
+- Предотвращение "зависания" ордеров на бирже
+- Автоматическое обновление цен при переразмещении
+
+### Улучшенная PnL защита
+- SELL ордера размещаются только выше WAP (Weighted Average Price)
+- Защита от размещения ордеров в убыточной зоне
+- Автоматическая проверка прибыльности перед размещением
+
+### Автоматическое переразмещение
+- Функция `check_sell_ttls()` проверяет TTL каждые 3 секунды
+- Интегрирована в основной цикл бота
+- Логирование всех операций с TTL
+
+## 🖥️ Системные требования
+
+### Минимальные требования
+- **ОС**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
+- **RAM**: 2 GB
+- **CPU**: 2 ядра
+- **Диск**: 10 GB свободного места
 - **Python**: 3.8+
-- **Memory**: 512MB RAM minimum
-- **Storage**: 1GB free space
-- **Network**: Stable internet connection
 
-### 1. Server Setup
+### Рекомендуемые требования
+- **ОС**: Ubuntu 22.04 LTS
+- **RAM**: 4 GB
+- **CPU**: 4 ядра
+- **Диск**: 20 GB SSD
+- **Python**: 3.9+
 
+## 🔧 Подготовка сервера
+
+### 1. Обновление системы
 ```bash
-# Update system
+# Ubuntu/Debian
 sudo apt update && sudo apt upgrade -y
 
-# Install Python and required packages
-sudo apt install python3 python3-pip python3-venv git systemd -y
-
-# Create deployment directory
-sudo mkdir -p /root/bot-deployment
-cd /root/bot-deployment
+# CentOS/RHEL
+sudo yum update -y
 ```
 
-### 2. Deploy Bot Files
-
-**Option A: Direct Upload**
+### 2. Установка Python и зависимостей
 ```bash
-# From local machine
-scp -i ~/.ssh/bot_server_key extended-bot-v2.py root@YOUR_SERVER:/root/bot-deployment/
-scp -i ~/.ssh/bot_server_key config.py root@YOUR_SERVER:/root/bot-deployment/
-scp -i ~/.ssh/bot_server_key requirements.txt root@YOUR_SERVER:/root/bot-deployment/
-scp -i ~/.ssh/bot_server_key .env root@YOUR_SERVER:/root/bot-deployment/
+# Ubuntu/Debian
+sudo apt install -y python3 python3-pip python3-venv git curl
+
+# CentOS/RHEL
+sudo yum install -y python3 python3-pip git curl
 ```
 
-**Option B: Git Clone**
+### 3. Создание пользователя для бота
 ```bash
-# On server
-cd /root/bot-deployment
-git clone https://github.com/your-username/extended-bot-v2.git .
+sudo useradd -m -s /bin/bash botuser
+sudo usermod -aG sudo botuser
+sudo passwd botuser
 ```
 
-### 3. Environment Setup
+## 📥 Установка бота
 
+### 1. Клонирование репозитория
 ```bash
-# Create virtual environment
+cd /home/botuser
+git clone https://github.com/fotoff/volume_bot_extended.git
+cd volume_bot_extended
+```
+
+### 2. Создание виртуального окружения
+```bash
 python3 -m venv bot-env
 source bot-env/bin/activate
-
-# Install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Configure environment
-cp env.example .env
-nano .env  # Edit with your API credentials
 ```
 
-### 4. Service Configuration
-
+### 3. Настройка переменных окружения
 ```bash
-# Copy service file
-sudo cp extended-bot-rise.service /etc/systemd/system/
-
-# Reload systemd and enable service
-sudo systemctl daemon-reload
-sudo systemctl enable extended-bot-rise
-
-# Start the bot
-sudo systemctl start extended-bot-rise
-
-# Check status
-sudo systemctl status extended-bot-rise
+cp env.example .env
+nano .env
 ```
 
-## ⚙️ Environment Configuration
-
-### Required Environment Variables
-
-Create `/root/bot-deployment/.env`:
-
+**Содержимое .env файла:**
 ```env
-# X10 Starknet API Credentials
 EXTENDED_API_KEY=your_api_key_here
-EXTENDED_PUBLIC_KEY=0x_your_public_key_here
-EXTENDED_STARK_PRIVATE=0x_your_private_key_here
+EXTENDED_PUBLIC_KEY=your_public_key_here
+EXTENDED_STARK_PRIVATE=your_private_key_here
 EXTENDED_VAULT_ID=your_vault_id_here
-
-# Bot Configuration
-BOT_STATE_FILE=bot_state.json
 ```
 
-### Security Notes
+## ⚙️ Конфигурация
 
-- **Never commit `.env` files to version control**
-- **Use read-only API keys when possible**
-- **Regularly rotate API credentials**
-- **Monitor API usage and rate limits**
+### 1. Основные настройки (`config.py`)
+```python
+# Включенные рынки
+MARKETS = ["BTC-USD", "HYPE-USD"]
 
-## 🔧 Service Management
+# Время жизни BUY ордеров (5 минут)
+BUY_TTL_SECONDS = 300
 
-### Systemd Service (`extended-bot-rise.service`)
+# Время жизни SELL ордеров (30 дней)
+SELL_TTL_SECONDS = 30 * 24 * 60 * 60
 
+# Минимальная прибыль для размещения SELL
+PNL_MIN_PCT = 0.0005  # +0.05% от WAP
+
+# Стоп-лосс на ветку (-2%)
+BRANCH_SL_PCT = -0.02
+```
+
+### 2. Настройка торговых пар
+```python
+# Триггеры роста для каждой пары
+BUY6_STEP_PCT = {
+    "BTC-USD": 0.003,    # 0.3%
+    "HYPE-USD": 0.003,   # 0.3%
+}
+
+# Уровни прибыли для SELL ордеров
+SELL_STEPS_PCT = {
+    "BTC-USD": [0.003, 0.006, 0.009],
+    "HYPE-USD": [0.002, 0.004, 0.006],
+}
+```
+
+## 🚀 Развертывание через systemd
+
+### 1. Создание service файла
+```bash
+sudo nano /etc/systemd/system/extended-bot-rise.service
+```
+
+**Содержимое файла:**
 ```ini
 [Unit]
 Description=Extended Bot (Rise Strategy)
 After=network.target
-Wants=network-online.target
+Wants=network.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/root/bot-deployment
-Environment=PATH=/root/bot-deployment/bot-env/bin
-ExecStart=/root/bot-deployment/bot-env/bin/python /root/bot-deployment/extended-bot-v2.py
+User=botuser
+Group=botuser
+WorkingDirectory=/home/botuser/volume_bot_extended
+Environment=PATH=/home/botuser/volume_bot_extended/bot-env/bin
+ExecStart=/home/botuser/volume_bot_extended/bot-env/bin/python extended-bot-v2.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -125,226 +160,167 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-### Management Commands
-
+### 2. Активация сервиса
 ```bash
-# Service control
+sudo systemctl daemon-reload
+sudo systemctl enable extended-bot-rise
+sudo systemctl start extended-bot-rise
+```
+
+### 3. Проверка статуса
+```bash
+sudo systemctl status extended-bot-rise
+```
+
+## 📊 Мониторинг и управление
+
+### Основные команды
+```bash
+# Статус бота
+sudo systemctl status extended-bot-rise
+
+# Запуск/остановка
 sudo systemctl start extended-bot-rise
 sudo systemctl stop extended-bot-rise
 sudo systemctl restart extended-bot-rise
-sudo systemctl status extended-bot-rise
 
-# Log monitoring
-journalctl -u extended-bot-rise -f
-journalctl -u extended-bot-rise --lines=100
-journalctl -u extended-bot-rise --since "1 hour ago"
-
-# Service information
-systemctl is-active extended-bot-rise
-systemctl is-enabled extended-bot-rise
+# Просмотр логов
+sudo journalctl -u extended-bot-rise -f
+sudo journalctl -u extended-bot-rise --since '1 hour ago'
 ```
 
-## 📊 Monitoring & Maintenance
+### Ключевые сообщения в логах
+- `🎯 Устанавливаем якорь на минимум` - новый якорь цены
+- `🟢 BUY размещён` - размещен BUY ордер
+- `🆕 Ветка создана` - создана новая ветка
+- `🟠 SELL размещен` - размещен SELL ордер с PnL защитой
+- `⏰ TTL истек для SELL` - переразмещение по TTL
+- `⚠️ Пропускаем SELL` - PnL защита сработала
 
-### Health Checks
+## 🔄 Обновление бота
 
-**1. Service Status Check**
-```bash
-#!/bin/bash
-# health_check.sh
-if systemctl is-active --quiet extended-bot-rise; then
-    echo "✅ Bot is running"
-else
-    echo "❌ Bot is not running"
-    exit 1
-fi
-```
-
-**2. Position Validation**
-```bash
-# Check bot state
-cat /root/bot-deployment/bot_state.json | jq '.'
-
-# Manual position check
-cd /root/bot-deployment
-source bot-env/bin/activate
-python check_status_async.py
-```
-
-### Log Analysis
-
-**Monitor key events:**
-```bash
-# Buy orders
-journalctl -u extended-bot-rise | grep "🟢 BUY"
-
-# Branch creation
-journalctl -u extended-bot-rise | grep "🆕 Ветка"
-
-# Sell orders
-journalctl -u extended-bot-rise | grep "🟠 SELL"
-
-# Errors and warnings
-journalctl -u extended-bot-rise | grep -E "(ERROR|WARNING|❌|⚠️)"
-```
-
-### Performance Monitoring
-
-**Resource Usage:**
-```bash
-# Memory usage
-ps aux | grep "extended-bot-v2.py"
-
-# System resources
-htop
-free -h
-df -h
-```
-
-## 🔄 Update Procedures
-
-### Safe Update Process
-
-1. **Stop the bot:**
+### 1. Остановка бота
 ```bash
 sudo systemctl stop extended-bot-rise
 ```
 
-2. **Backup current state:**
+### 2. Обновление файлов
 ```bash
-cp bot_state.json bot_state.json.backup.$(date +%Y%m%d_%H%M%S)
+cd /home/botuser/volume_bot_extended
+git pull origin main
 ```
 
-3. **Update files:**
-```bash
-# Upload new files or git pull
-git pull  # if using git
-# or
-scp -i ~/.ssh/bot_server_key extended-bot-v2.py root@YOUR_SERVER:/root/bot-deployment/
-```
-
-4. **Update dependencies (if needed):**
+### 3. Обновление зависимостей (если нужно)
 ```bash
 source bot-env/bin/activate
 pip install -r requirements.txt
 ```
 
-5. **Restart the bot:**
+### 4. Запуск бота
 ```bash
 sudo systemctl start extended-bot-rise
-```
-
-6. **Verify operation:**
-```bash
 sudo systemctl status extended-bot-rise
-journalctl -u extended-bot-rise --lines=20
 ```
 
-### Rollback Procedure
+## 🛠️ Устранение неполадок
 
-If issues occur after update:
+### Частые проблемы
 
+#### 1. Бот не запускается
 ```bash
-# Stop current version
-sudo systemctl stop extended-bot-rise
+# Проверить логи
+sudo journalctl -u extended-bot-rise --since '5 minutes ago'
 
-# Restore backup files
-cp extended-bot-v2.py.backup extended-bot-v2.py
-cp bot_state.json.backup.TIMESTAMP bot_state.json
-
-# Restart with previous version
-sudo systemctl start extended-bot-rise
+# Проверить права доступа
+ls -la /home/botuser/volume_bot_extended/
+sudo chown -R botuser:botuser /home/botuser/volume_bot_extended/
 ```
 
-## 🔐 Security Best Practices
-
-### Server Security
-
-1. **SSH Security:**
+#### 2. Ошибки API
 ```bash
-# Disable password authentication
-sudo nano /etc/ssh/sshd_config
-# Set: PasswordAuthentication no
-sudo systemctl restart ssh
+# Проверить переменные окружения
+sudo -u botuser cat /home/botuser/volume_bot_extended/.env
+
+# Проверить подключение к интернету
+curl -I https://api.x10.exchange
 ```
 
-2. **Firewall Configuration:**
+#### 3. Проблемы с памятью
 ```bash
-# Allow only necessary ports
+# Проверить использование памяти
+free -h
+ps aux | grep python
+
+# Перезапустить бота
+sudo systemctl restart extended-bot-rise
+```
+
+### Очистка состояния
+```bash
+# Очистить состояние бота (для свежего старта)
+sudo -u botuser rm -f /home/botuser/volume_bot_extended/bot_state.json
+sudo systemctl restart extended-bot-rise
+```
+
+## 🔒 Безопасность
+
+### 1. Firewall
+```bash
+# Открыть только необходимые порты
 sudo ufw allow ssh
 sudo ufw enable
 ```
 
-3. **Regular Updates:**
+### 2. Обновления безопасности
 ```bash
-# Schedule automatic security updates
+# Автоматические обновления безопасности
 sudo apt install unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
-### Bot Security
-
-- **API Key Permissions**: Use trading-only keys
-- **Position Limits**: Set reasonable `BUY_QTY` values
-- **Stop-Loss Settings**: Ensure `BRANCH_SL_PCT` is properly configured
-- **Monitoring**: Set up alerts for unusual activity
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-**1. Bot Won't Start**
+### 3. Мониторинг доступа
 ```bash
-# Check service logs
-journalctl -u extended-bot-rise --lines=50
-
-# Common causes:
-# - Missing dependencies
-# - Invalid API credentials
-# - Permission issues
-# - Configuration errors
+# Просмотр попыток входа
+sudo journalctl -u ssh | grep "Failed password"
 ```
 
-**2. Position Mismatches**
-```bash
-# Check for warnings
-journalctl -u extended-bot-rise | grep "РАСХОЖДЕНИЕ"
+## 📈 Производительность
 
-# Validate state file
-cat bot_state.json | jq '.branches'
+### Оптимизация
+- **Частота тиков**: Настройте `TICK_SECONDS` в config.py
+- **Размер позиций**: Адаптируйте `BUY_QTY` под размер аккаунта
+- **TTL настройки**: Оптимизируйте под рыночные условия
+
+### Мониторинг ресурсов
+```bash
+# Мониторинг CPU и памяти
+htop
+iotop
+
+# Мониторинг диска
+df -h
+du -sh /home/botuser/volume_bot_extended/
 ```
 
-**3. Orders Not Placing**
+## 📞 Поддержка
+
+### Полезные команды для диагностики
 ```bash
-# Check API connectivity
-# Check account balance
-# Verify market is active
-# Check order size requirements
+# Полная информация о системе
+sudo systemctl status extended-bot-rise --full
+
+# Логи с деталями
+sudo journalctl -u extended-bot-rise --since '1 hour ago' --no-pager
+
+# Проверка конфигурации
+sudo -u botuser python3 -c "from config import *; print(f'Markets: {MARKETS}')"
 ```
 
-### Emergency Procedures
-
-**Stop All Trading:**
-```bash
-sudo systemctl stop extended-bot-rise
-# Manually close positions if needed
-```
-
-**Clear State (Fresh Start):**
-```bash
-sudo systemctl stop extended-bot-rise
-rm bot_state.json
-sudo systemctl start extended-bot-rise
-```
-
-## 📞 Support
-
-For deployment issues:
-1. Check logs: `journalctl -u extended-bot-rise`
-2. Verify configuration: `cat .env` and `python -c "from config import *"`
-3. Test connectivity: API endpoints reachable
-4. Create GitHub issue with logs and configuration details
+### Контакты
+- **GitHub Issues**: [volume_bot_extended](https://github.com/fotoff/volume_bot_extended/issues)
+- **Документация**: [README.md](README.md)
+- **Журнал изменений**: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-**⚠️ Always test deployments on small amounts before full production use.**
+**⚠️ Важно**: Всегда тестируйте изменения на тестовой среде перед применением в продакшене.

@@ -1,307 +1,212 @@
-# Quick Start Guide - Extended Trading Bot v2
+# ⚡ Быстрый старт - Extended Bot v2
 
-Get your trading bot running in minutes with this step-by-step guide.
+## 🎯 Что нового в v2.1
 
-## 🚀 5-Minute Setup
+### 🆕 TTL для SELL ордеров (30 дней)
+- Автоматическое переразмещение SELL ордеров при истечении TTL
+- Предотвращение "зависания" ордеров на бирже
+- Автоматическое обновление цен при переразмещении
 
-### Step 1: Prerequisites
+### 🛡️ Улучшенная PnL защита
+- SELL ордера размещаются только выше WAP (Weighted Average Price)
+- Защита от размещения ордеров в убыточной зоне
+- Автоматическая проверка прибыльности перед размещением
 
+### 🔄 Автоматическое переразмещение
+- Функция `check_sell_ttls()` проверяет TTL каждые 3 секунды
+- Интегрирована в основной цикл бота
+- Логирование всех операций с TTL
+
+## 🚀 Быстрый запуск
+
+### 1. Клонирование репозитория
 ```bash
-# Check Python version (3.8+ required)
-python3 --version
-
-# Install git if not available
-sudo apt install git python3-pip python3-venv
+git clone https://github.com/fotoff/volume_bot_extended.git
+cd volume_bot_extended
 ```
 
-### Step 2: Download and Setup
-
+### 2. Установка зависимостей
 ```bash
-# Clone repository
-git clone https://github.com/your-username/extended-bot-v2.git
-cd extended-bot-v2
-
-# Create virtual environment
 python3 -m venv bot-env
-source bot-env/bin/activate
-
-# Install dependencies
+source bot-env/bin/activate  # Linux/macOS
+# или bot-env\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-### Step 3: Configuration
-
+### 3. Настройка переменных окружения
 ```bash
-# Copy environment template
 cp env.example .env
-
-# Edit with your credentials
-nano .env
+nano .env  # Отредактируйте с вашими API ключами
 ```
 
-**Required `.env` settings:**
+**Содержимое .env:**
 ```env
-EXTENDED_API_KEY=your_x10_api_key_here
-EXTENDED_PUBLIC_KEY=0x_your_starknet_public_key
-EXTENDED_STARK_PRIVATE=0x_your_starknet_private_key
-EXTENDED_VAULT_ID=your_vault_id_number
+EXTENDED_API_KEY=your_api_key_here
+EXTENDED_PUBLIC_KEY=your_public_key_here
+EXTENDED_STARK_PRIVATE=your_private_key_here
+EXTENDED_VAULT_ID=your_vault_id_here
 ```
 
-### Step 4: Test Configuration
-
+### 4. Запуск бота
 ```bash
-# Validate configuration
-python3 -c "from config import MARKETS; print(f'Active markets: {MARKETS}')"
-
-# Test API connection (optional)
-python3 -c "
-import asyncio
-from extended_bot_v2 import Bot
-async def test():
-    # Quick connection test
-    pass
-"
+python extended-bot-v2.py
 ```
 
-### Step 5: Run the Bot
+## ⚙️ Быстрая конфигурация
 
-**Local Testing:**
-```bash
-python3 extended-bot-v2.py
+### Основные настройки (`config.py`)
+```python
+# Включенные рынки
+MARKETS = ["BTC-USD", "HYPE-USD"]
+
+# Время жизни BUY ордеров (5 минут)
+BUY_TTL_SECONDS = 300
+
+# Время жизни SELL ордеров (30 дней)
+SELL_TTL_SECONDS = 30 * 24 * 60 * 60
+
+# Минимальная прибыль для размещения SELL
+PNL_MIN_PCT = 0.0005  # +0.05% от WAP
+
+# Стоп-лосс на ветку (-2%)
+BRANCH_SL_PCT = -0.02
 ```
 
-**Production Deployment:**
+### Настройка торговых пар
+```python
+# Триггеры роста для каждой пары
+BUY6_STEP_PCT = {
+    "BTC-USD": 0.003,    # 0.3%
+    "HYPE-USD": 0.003,   # 0.3%
+}
+
+# Уровни прибыли для SELL ордеров
+SELL_STEPS_PCT = {
+    "BTC-USD": [0.003, 0.006, 0.009],
+    "HYPE-USD": [0.002, 0.004, 0.006],
+}
+```
+
+## 🔧 Развертывание на сервере
+
+### 1. Создание systemd сервиса
 ```bash
-# Install as service
-sudo cp extended-bot-rise.service /etc/systemd/system/
+sudo nano /etc/systemd/system/extended-bot-rise.service
+```
+
+**Содержимое:**
+```ini
+[Unit]
+Description=Extended Bot (Rise Strategy)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/bot-deployment
+Environment=PATH=/root/bot-deployment/bot-env/bin
+ExecStart=/root/bot-deployment/bot-env/bin/python extended-bot-v2.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 2. Активация сервиса
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable extended-bot-rise
 sudo systemctl start extended-bot-rise
+```
 
-# Check status
+### 3. Проверка статуса
+```bash
 sudo systemctl status extended-bot-rise
 ```
 
-## 📊 First Trading Session
+## 📊 Мониторинг
 
-### Monitor Your Bot
-
+### Основные команды
 ```bash
-# Real-time logs
-journalctl -u extended-bot-rise -f
+# Статус бота
+sudo systemctl status extended-bot-rise
 
-# Recent activity
-journalctl -u extended-bot-rise --lines=50
+# Просмотр логов
+sudo journalctl -u extended-bot-rise -f
+sudo journalctl -u extended-bot-rise --since '1 hour ago'
 ```
 
-### Expected Behavior
+### Ключевые сообщения в логах
+- `🎯 Устанавливаем якорь на минимум` - новый якорь цены
+- `🟢 BUY размещён` - размещен BUY ордер
+- `🆕 Ветка создана` - создана новая ветка
+- `🟠 SELL размещен` - размещен SELL ордер с PnL защитой
+- `⏰ TTL истек для SELL` - переразмещение по TTL
+- `⚠️ Пропускаем SELL` - PnL защита сработала
 
-You should see logs like:
-```
-[BTC-USD] 📈 last=112593 | pos=0 WAP=0 | branches=0
-[BTC-USD] 🎯 Устанавливаем якорь на минимум: 112587
-[HYPE-USD] 🎯 Проверка роста: last=41.875, anchor=41.850, trigger=41.975
-```
+## 🛠️ Устранение неполадок
 
-### First Purchase
+### Частые проблемы
 
-When price rises by the configured percentage:
-```
-[BTC-USD] 🟢 BUY размещён 0.0004@112920; anchor→112920
-[BTC-USD] 🆕 Ветка 1: buy=112920, size=0.0004, SL=112807
-[BTC-USD] 🟠 SELL L1 ветки 1 0.00013@113258
-```
-
-## ⚙️ Basic Configuration
-
-### Modify Trading Pairs
-
-Edit `config.py`:
-```python
-# Enable/disable pairs
-MARKETS = ["BTC-USD", "HYPE-USD"]  # Add or remove pairs
-
-# Adjust position sizes
-BUY_QTY = {
-    "BTC-USD": 0.0004,   # Start small for testing
-    "HYPE-USD": 1.0,
-}
-```
-
-### Adjust Sensitivity
-
-```python
-# Rise trigger percentages
-BUY6_STEP_PCT = {
-    "BTC-USD": 0.003,    # 0.3% - less sensitive
-    "HYPE-USD": 0.005,   # 0.5% - more selective
-}
-```
-
-### Risk Management
-
-```python
-# Stop-loss percentage
-BRANCH_SL_PCT = -0.001  # -0.1% stop-loss
-
-# Profit targets
-SELL_STEPS_PCT = {
-    "BTC-USD": [0.003, 0.006, 0.009],  # Conservative
-    "HYPE-USD": [0.005, 0.010, 0.015], # More aggressive
-}
-```
-
-## 🔍 Monitoring Commands
-
-### Service Management
-
+#### 1. Бот не запускается
 ```bash
-# Status check
-systemctl status extended-bot-rise
+# Проверить логи
+sudo journalctl -u extended-bot-rise --since '5 minutes ago'
 
-# Stop bot
-systemctl stop extended-bot-rise
-
-# Restart bot
-systemctl restart extended-bot-rise
+# Проверить права доступа
+ls -la /root/bot-deployment/
 ```
 
-### Log Analysis
-
+#### 2. Ошибки API
 ```bash
-# Filter by action type
-journalctl -u extended-bot-rise | grep "🟢 BUY"     # Buy orders
-journalctl -u extended-bot-rise | grep "🆕 Ветка"   # New branches
-journalctl -u extended-bot-rise | grep "🟠 SELL"    # Sell orders
-journalctl -u extended-bot-rise | grep "🛑"         # Stop losses
+# Проверить переменные окружения
+cat /root/bot-deployment/.env
 
-# Recent errors
-journalctl -u extended-bot-rise | grep -E "(ERROR|❌|⚠️)" | tail -10
+# Проверить подключение к интернету
+curl -I https://api.x10.exchange
 ```
 
-### Position Check
-
+#### 3. Очистка состояния
 ```bash
-# View bot state
-cat bot_state.json | python3 -m json.tool
-
-# Count active branches
-python3 -c "
-import json
-state = json.load(open('bot_state.json', 'r'))
-for symbol, branches in state['branches'].items():
-    active = sum(1 for b in branches.values() if b['active'])
-    print(f'{symbol}: {active} active branches')
-"
+# Очистить состояние бота (для свежего старта)
+rm -f /root/bot-deployment/bot_state.json
+sudo systemctl restart extended-bot-rise
 ```
 
-## 🚨 Safety Checklist
+## 🔄 Обновление
 
-### Before Starting
-
-- [ ] **Small amounts**: Use minimal `BUY_QTY` for testing
-- [ ] **Testnet first**: If available, test on testnet
-- [ ] **API permissions**: Ensure trading permissions are correct
-- [ ] **Balance check**: Verify sufficient balance for trading
-- [ ] **Stop-loss set**: Confirm `BRANCH_SL_PCT` is configured
-
-### During Operation
-
-- [ ] **Monitor regularly**: Check logs every few hours
-- [ ] **Watch positions**: Ensure no unexpected large positions
-- [ ] **API limits**: Monitor for rate limiting issues
-- [ ] **System resources**: Check CPU/memory usage
-
-### Emergency Stop
-
+### 1. Остановка бота
 ```bash
-# Immediate stop
 sudo systemctl stop extended-bot-rise
-
-# Check final positions
-python3 check_status_async.py  # If available
-
-# Manual position cleanup if needed
-# (Use exchange interface to close positions)
 ```
 
-## 🔧 Troubleshooting
-
-### Bot Won't Start
-
+### 2. Обновление файлов
 ```bash
-# Check service logs
-journalctl -u extended-bot-rise --lines=20
-
-# Common issues:
-# 1. Missing API credentials
-# 2. Invalid configuration
-# 3. Python dependencies
-# 4. File permissions
+# Загрузить новые файлы
+scp config.py root@server:/root/bot-deployment/
+scp extended-bot-v2.py root@server:/root/bot-deployment/
 ```
 
-### No Trading Activity
-
-Check:
-1. **Market volatility**: Prices need to move for triggers
-2. **Trigger percentages**: May be too high for current conditions
-3. **Balance**: Ensure sufficient funds
-4. **API connectivity**: Network issues
-
-### Positions Not Closing
-
+### 3. Запуск бота
 ```bash
-# Check sell orders
-journalctl -u extended-bot-rise | grep "🟠 SELL" | tail -5
-
-# Verify branches are active
-cat bot_state.json | grep -A 5 '"active": true'
+sudo systemctl start extended-bot-rise
+sudo systemctl status extended-bot-rise
 ```
 
-## 📈 Performance Tips
+## 📚 Дополнительная документация
 
-### Optimization
+- **Полное руководство**: [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Описание изменений**: [CHANGELOG.md](CHANGELOG.md)
+- **Основная документация**: [README.md](README.md)
 
-1. **Tick frequency**: Adjust `TICK_SECONDS` in config
-2. **Pair selection**: Start with 1-2 pairs, expand gradually
-3. **Size management**: Scale `BUY_QTY` based on account size
-4. **Trigger tuning**: Adjust `BUY6_STEP_PCT` based on market conditions
+## 🚨 Важные замечания
 
-### Monitoring
-
-Set up external monitoring:
-```bash
-# Create monitoring script
-cat > monitor.sh << 'EOF'
-#!/bin/bash
-if ! systemctl is-active --quiet extended-bot-rise; then
-    echo "Bot is down!" | mail -s "Trading Bot Alert" your@email.com
-fi
-EOF
-
-# Add to crontab
-crontab -e
-# Add: */5 * * * * /path/to/monitor.sh
-```
-
-## 💡 Pro Tips
-
-1. **Start conservative**: Use small amounts and low sensitivity
-2. **Paper trade first**: Run without real money to understand behavior
-3. **Regular updates**: Keep configuration tuned to market conditions
-4. **Backup strategy**: Always have manual override capability
-5. **Risk management**: Never risk more than you can afford to lose
-
-## 📞 Getting Help
-
-If you encounter issues:
-
-1. **Check logs first**: `journalctl -u extended-bot-rise`
-2. **Review configuration**: Validate all settings
-3. **Restart bot**: Often resolves temporary issues
-4. **GitHub Issues**: Report bugs with logs and configuration
-5. **Community**: Join discussions for tips and strategies
+- **Тестирование**: Всегда тестируйте на небольших суммах
+- **Мониторинг**: Регулярно проверяйте логи и статус бота
+- **Безопасность**: Храните API ключи в безопасном месте
+- **Риски**: Торговля криптовалютами связана с высокими рисками
 
 ---
 
-**🎯 Ready to trade? Start with small amounts and monitor closely!**
+**⚡ Готово!** Ваш Extended Bot v2 с новыми функциями TTL и PnL защиты готов к работе!

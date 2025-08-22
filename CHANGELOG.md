@@ -1,80 +1,100 @@
-# Changelog
+# 📋 Журнал изменений
 
-All notable changes to Extended Trading Bot v2 will be documented in this file.
+## [v2.1] - 2025-08-22
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### 🆕 Добавлено
+- **TTL для SELL ордеров (30 дней)**
+  - Автоматическое переразмещение SELL ордеров при истечении TTL
+  - Предотвращение "зависания" ордеров на бирже
+  - Новая функция `check_sell_ttls()` для мониторинга TTL
 
-## [2.1.0] - 2025-01-22
+- **Улучшенная PnL защита**
+  - SELL ордера размещаются только выше WAP (Weighted Average Price)
+  - Проверка `target <= branch_wap` перед размещением
+  - Защита от размещения ордеров в убыточной зоне
 
-### Added
-- **Position Tracking**: Real-time monitoring and mismatch detection between positions and branches
-- **Enhanced Logging**: Detailed position mismatch logging with branch breakdown
-- **Sell Order Execution Tracking**: Automatic monitoring of executed sell orders and branch size adjustment
-- **Improved Error Handling**: Better handling of partial fills and order state management
+- **Автоматическое переразмещение SELL**
+  - Интеграция TTL проверки в основной цикл бота
+  - Логирование всех операций с TTL
+  - Автоматическое обновление цен при переразмещении
 
-### Fixed
-- **Critical Fix**: Corrected branch creation logic for partial order fills - now creates branches with actual fill size instead of order size
-- **Position Accuracy**: Fixed issue where bot created branches larger than actual position increase
-- **Sell Order Logic**: Improved sell order placement to only occur when position exists and branches are active
-- **TTL Management**: Enhanced buy order TTL handling with proper position tracking for re-placement
+### 🔧 Исправлено
+- **Ошибки отступов** в функциях размещения SELL ордеров
+- **Неправильная структура** в функции `_market_close_branch`
+- **Синтаксические ошибки** в обработке исключений
+- **Проблемы с логикой** размещения ордеров
 
-### Changed
-- **Branch Deactivation**: When position is zero, branches are now properly deactivated and their size is reset
-- **State Management**: Improved state persistence with better branch timestamp tracking
-- **Configuration**: Updated HYPE-USD settings for better performance (BUY6_STEP_PCT: 0.001→0.003, SELL_STEPS_PCT optimized)
+### 📚 Документация
+- Обновлен README.md с описанием новых функций
+- Добавлены примеры конфигурации TTL
+- Улучшено описание PnL защиты
+- Добавлены инструкции по развертыванию
 
-### Technical Improvements
-- Added `log_position_mismatch()` function for detailed mismatch analysis
-- Added `track_sell_executions()` function for automatic sell order monitoring
-- Enhanced `enforce_buy_ttls()` with accurate position delta calculations
-- Improved sell order deduplication to prevent multiple orders per leg
-
-## [2.0.0] - 2025-01-20
-
-### Added
-- **"Buy on Rise" Strategy**: Complete rewrite of trading algorithm
-- **Multi-Branch Architecture**: Independent branch management system
-- **State Persistence**: JSON-based state management with `bot_state.json`
-- **TTL Management**: Automatic buy order re-placement on expiration
-- **Multi-Pair Support**: Trading multiple cryptocurrency pairs simultaneously
-- **Systemd Integration**: Service management for production deployment
-
-### Features
-- **Anchor Tracking**: Dynamic minimum price tracking per symbol
-- **Independent Branches**: Each purchase creates separate branch with own sell orders
-- **Sell Ladder**: Automatic 3-level sell order placement
-- **Stop-Loss Protection**: Individual stop-loss for each branch
-- **Order Re-placement**: Smart re-placement of expired orders closer to market
-
-### Supported Pairs
-- BTC-USD (0.3% rise trigger)
-- ETH-USD (0.4% rise trigger) 
-- SOL-USD (0.5% rise trigger)
-- OP-USD (0.6% rise trigger)
-- HYPE-USD (0.3% rise trigger)
-- DOGE-USD (0.8% rise trigger)
-
-### Configuration
-- Configurable rise percentages per pair
-- Customizable sell profit levels
-- Adjustable position sizes
-- TTL settings for buy orders
-
-### Infrastructure
-- Virtual environment setup
-- Environment variable configuration
-- Systemd service integration
-- Comprehensive logging system
-
-## [1.x.x] - Previous Versions
-
-Previous versions used different trading strategies and are not covered in this changelog. This version represents a complete rewrite of the trading algorithm.
+### ⚙️ Конфигурация
+- Добавлен `SELL_TTL_SECONDS = 30 * 24 * 60 * 60` (30 дней)
+- Обновлены комментарии для `PNL_MIN_PCT`
+- Улучшена документация конфигурации
 
 ---
 
-## Version History Summary
+## [v2.0] - 2025-08-21
 
-- **v2.1.0**: Enhanced position tracking and error handling
-- **v2.0.0**: Complete rewrite with "buy on rise" strategy
-- **v1.x.x**: Legacy versions (deprecated)
+### 🆕 Добавлено
+- **Стратегия "Buy on Rise"**
+  - Отслеживание минимальной цены (якорь) для каждой пары
+  - Размещение BUY ордеров при росте на заданный процент
+  - Независимые ветки для каждой покупки
+
+- **Многоветочная система**
+  - Каждая ветка работает независимо
+  - 3 SELL ордера на разных уровнях прибыли
+  - Индивидуальный стоп-лосс для каждой ветки
+
+- **Защитные механизмы**
+  - Автоматический стоп-лосс (-2% от цены покупки)
+  - Защита от открытия коротких позиций
+  - TTL для BUY ордеров (5 минут)
+
+### 🔧 Исправлено
+- Проблемы с дублированием SELL ордеров
+- Ошибки в логике восстановления веток
+- Проблемы с частичным исполнением ордеров
+- Ошибки в управлении состоянием
+
+### 📚 Документация
+- Создан базовый README.md
+- Добавлены инструкции по развертыванию
+- Создан CHANGELOG.md
+- Добавлены файлы лицензии и контрибьюции
+
+---
+
+## [v1.0] - 2025-08-20
+
+### 🆕 Добавлено
+- Базовая функциональность торгового бота
+- Поддержка X10 Starknet API
+- Система управления ордерами
+- Базовое логирование и мониторинг
+
+### 🔧 Исправлено
+- Начальные баги и проблемы совместимости
+- Ошибки в API интеграции
+- Проблемы с управлением состоянием
+
+---
+
+## 📝 Примечания
+
+- Все версии протестированы на серверах Linux
+- Поддерживается Python 3.8+
+- Совместимость с X10 Starknet API
+- Автоматическое управление через systemd
+
+## 🚀 Планы на будущее
+
+- [ ] Добавление новых торговых пар
+- [ ] Улучшение алгоритмов управления рисками
+- [ ] Веб-интерфейс для мониторинга
+- [ ] Интеграция с внешними сигналами
+- [ ] Расширенная аналитика и отчеты
