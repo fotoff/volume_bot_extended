@@ -113,3 +113,4 @@ ssh_keys/
 # Custom scripts (if sensitive)
 deploy.sh
 secrets/
+SERVER_ACCESS_INFO.md
