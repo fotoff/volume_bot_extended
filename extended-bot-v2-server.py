@@ -400,17 +400,18 @@ class Bot:
             ttl_seconds = BUY_TTL_SECONDS
 
             if o is None:
+                # Ордер исчез - проверяем, что произошло
                 pos_after, _ = await self.position(symbol)
                 pos_before = Decimal(str(meta.get("pos_before", "0")))
                 delta = pos_after - pos_before
+                
                 if delta >= meta["size"]:
-                    # ИСПРАВЛЕНИЕ 1: Передаем реальный размер исполнения, а не размер ордера
-                    await self.on_buy_filled(symbol, price=meta["price"], size=delta) 
-                    self.log(symbol, f"✅ BUY полностью исполнен по позиции: +{delta} (было {meta['size']})")
+                    # Полное исполнение: создаем ветку
+                    await self.on_buy_filled(symbol, price=meta["price"], size=meta["size"])
+                    self.log(symbol, f"✅ BUY полностью исполнен: +{meta['size']}")
                 elif delta > 0:
-                    # Частичное исполнение: создаем ветку на delta, переразмещаем остаток
-                    await self.on_buy_filled(symbol, price=meta["price"], size=delta)
-                    self.log(symbol, f"⚡ BUY частично исполнен: +{delta} из {meta['size']}")
+                    # Частичное исполнение: НЕ создаем ветку, только переразмещаем остаток
+                    self.log(symbol, f"⚡ BUY частично исполнен: +{delta} из {meta['size']}, ждем полного исполнения")
                     remaining = rsize(symbol, meta["size"] - delta)
                     bid, _ = await self.best_bid_ask(symbol)
                     new_price = rprice(symbol, bid)
@@ -426,7 +427,7 @@ class Bot:
                             "client_id": new_cid,
                             "ts": now,
                             "kind": "BUY",
-                            "pos_before": pos_after,
+                            "pos_before": pos_after,  # Продолжаем отслеживать с текущей позиции
                         }
                         self.log(symbol, f"🔁 Переразмещаем BUY остаток {remaining}@{new_price}")
                 else:
@@ -441,7 +442,7 @@ class Bot:
                     if new_oid:
                         self.pending_buys[symbol][new_oid] = {
                             "price": new_price,
-                            "size": rsize(symbol, meta["size"]),
+                            "size": meta["size"],
                             "client_id": new_cid,
                             "ts": now,
                             "kind": "BUY",
@@ -454,35 +455,66 @@ class Bot:
             filled = Decimal(str(getattr(o, "filled_qty", 0) or 0))
             qty = Decimal(str(getattr(o, "qty", 0) or 0))
             if qty > 0 and filled >= qty:
-                # ИСПРАВЛЕНИЕ 1: При полном исполнении создаем ветку точно размера ордера
+                # Полное исполнение: создаем ветку
                 await self.on_buy_filled(symbol, price=meta["price"], size=meta["size"])
                 to_delete.append(oid)
             elif age >= ttl_seconds:
+                # TTL истек - отменяем и проверяем частичное исполнение
                 try:
                     await self.cancel_order(int(oid))
                     self.log(symbol, f"🟡 Отменяем BUY (TTL {ttl_seconds}s) {meta['size']}@{meta['price']}")
                 except Exception as e:
                     self.log(symbol, f"❌ Ошибка отмены BUY {oid}: {e}")
 
-                # ИСПРАВЛЕНИЕ 4: Сохраняем текущую позицию для корректного pos_before
+                # Проверяем, была ли частичная покупка
                 current_pos, _ = await self.position(symbol)
-                bid, _ = await self.best_bid_ask(symbol)
-                new_price = rprice(symbol, bid)
-                new_cid = ":".join(meta["client_id"].split(":")[:-1] + [uuid.uuid4().hex[:8]])
-                try:
-                    new_oid = await self.place_limit(symbol, OrderSide.BUY, new_price, meta["size"], new_cid, ttl_seconds=ttl_seconds)
-                except Exception:
-                    new_oid = None
-                if new_oid:
-                    self.pending_buys[symbol][new_oid] = {
-                        "price": new_price,
-                        "size": meta["size"],
-                        "client_id": new_cid,
-                        "ts": now,
-                        "kind": "BUY",
-                        "pos_before": current_pos,  # ИСПРАВЛЕНИЕ 4: Корректный pos_before
-                    }
-                    self.log(symbol, f"🔁 Переразмещаем BUY ближе к рынку: {meta['size']}@{new_price}")
+                pos_before = Decimal(str(meta.get("pos_before", "0")))
+                delta = current_pos - pos_before
+                
+                if delta > 0:
+                    # Была частичная покупка - создаем ветку на реально купленное
+                    await self.on_buy_filled(symbol, price=meta["price"], size=delta)
+                    self.log(symbol, f"🆕 Создаем ветку на частично исполненный BUY: +{delta}")
+                    
+                    # Переразмещаем остаток, если он достаточно большой
+                    remaining = meta["size"] - delta
+                    if remaining >= MIN_ORDER_SIZES[symbol]:
+                        bid, _ = await self.best_bid_ask(symbol)
+                        new_price = rprice(symbol, bid)
+                        new_cid = ":".join(meta["client_id"].split(":")[:-1] + [uuid.uuid4().hex[:8]])
+                        try:
+                            new_oid = await self.place_limit(symbol, OrderSide.BUY, new_price, rsize(symbol, remaining), new_cid, ttl_seconds=ttl_seconds)
+                        except Exception:
+                            new_oid = None
+                        if new_oid:
+                            self.pending_buys[symbol][new_oid] = {
+                                "price": new_price,
+                                "size": remaining,
+                                "client_id": new_cid,
+                                "ts": now,
+                                "kind": "BUY",
+                                "pos_before": current_pos,
+                            }
+                            self.log(symbol, f"🔁 Переразмещаем остаток BUY {remaining}@{new_price}")
+                else:
+                    # Не было покупки - переразмещаем полный размер
+                    bid, _ = await self.best_bid_ask(symbol)
+                    new_price = rprice(symbol, bid)
+                    new_cid = ":".join(meta["client_id"].split(":")[:-1] + [uuid.uuid4().hex[:8]])
+                    try:
+                        new_oid = await self.place_limit(symbol, OrderSide.BUY, new_price, meta["size"], new_cid, ttl_seconds=ttl_seconds)
+                    except Exception:
+                        new_oid = None
+                    if new_oid:
+                        self.pending_buys[symbol][new_oid] = {
+                            "price": new_price,
+                            "size": meta["size"],
+                            "client_id": new_cid,
+                            "ts": now,
+                            "kind": "BUY",
+                            "pos_before": current_pos,
+                        }
+                        self.log(symbol, f"🔁 Переразмещаем BUY ближе к рынку: {meta['size']}@{new_price}")
                 to_delete.append(oid)
 
         for oid in to_delete:
@@ -491,9 +523,26 @@ class Bot:
     async def on_buy_filled(self, symbol: str, price: Decimal, size: Decimal):
         b_id = self.new_branch_id(symbol)
         initial_stop = rprice(symbol, price * (Decimal("1") + Decimal(str(BRANCH_SL_PCT))))
+        
+        # Определяем количество SELL ордеров в зависимости от размера позиции
+        min_size = MIN_ORDER_SIZES[symbol]
         legs = {}
-        for leg_name, tp, split in zip(("L1", "L2", "L3"), SELL_STEPS_PCT[symbol], SELL_SPLIT):
-            legs[leg_name] = SellLeg(leg=leg_name, target_pct=Decimal(str(tp)), size=rsize(symbol, size * Decimal(str(split))))
+        
+        if size >= min_size * 3:
+            # Достаточно для 3 SELL ордеров
+            for leg_name, tp, split in zip(("L1", "L2", "L3"), SELL_STEPS_PCT[symbol], SELL_SPLIT):
+                legs[leg_name] = SellLeg(leg=leg_name, target_pct=Decimal(str(tp)), size=rsize(symbol, size * Decimal(str(split))))
+        elif size >= min_size * 2:
+            # Достаточно для 2 SELL ордеров
+            for i, (tp, split) in enumerate(zip(SELL_STEPS_PCT[symbol][:2], [0.5, 0.5])):
+                leg_name = f"L{i+1}"
+                legs[leg_name] = SellLeg(leg=leg_name, target_pct=Decimal(str(tp)), size=rsize(symbol, size * Decimal(str(split))))
+        elif size >= min_size:
+            # Достаточно для 1 SELL ордера
+            legs["L1"] = SellLeg(leg="L1", target_pct=Decimal(str(SELL_STEPS_PCT[symbol][0])), size=rsize(symbol, size))
+        else:
+            # Позиция слишком маленькая - создаем ветку без SELL ордеров
+            self.log(symbol, f"⚠️ Позиция {size} слишком маленькая для SELL ордеров (мин: {min_size})")
 
         self.branches[symbol][b_id] = Branch(
             branch_id=b_id,
@@ -507,7 +556,9 @@ class Bot:
             created_at=datetime.datetime.now(datetime.timezone.utc),
             last_updated=datetime.datetime.now(datetime.timezone.utc),
         )
-        self.log(symbol, f"🆕 Ветка {b_id}: buy={price}, size={size}, SL={initial_stop}")
+        
+        sell_count = len(legs)
+        self.log(symbol, f"🆕 Ветка {b_id}: buy={price}, size={size}, SL={initial_stop}, SELL ордеров: {sell_count}")
         self.log_branch_state(symbol, self.branches[symbol][b_id], note="created")
         self._save_state()
 

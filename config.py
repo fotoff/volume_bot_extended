@@ -6,11 +6,11 @@ This configuration file defines trading parameters for the "buy on rise" strateg
 Each trading pair has customized settings optimized for its volatility and market behavior.
 
 Supported Trading Pairs:
-    - BTC-USD: 0.3% rise trigger, SELL levels [0.3%, 0.6%, 0.9%]
+    - BTC-USD: 0.2% rise trigger, SELL levels [0.3%, 0.4%, 0.5%]
     - ETH-USD: 0.4% rise trigger, SELL levels [0.4%, 0.8%, 1.2%]
     - SOL-USD: 0.5% rise trigger, SELL levels [0.5%, 1.0%, 1.5%]
     - OP-USD: 0.6% rise trigger, SELL levels [0.6%, 1.2%, 1.8%]
-    - HYPE-USD: 0.3% rise trigger, SELL levels [0.2%, 0.4%, 0.6%]
+    - HYPE-USD: 0.4% rise trigger, SELL levels [0.5%, 0.6%, 1.0%]
     - DOGE-USD: 0.8% rise trigger, SELL levels [0.8%, 1.6%, 2.4%]
 
 Strategy: Buy on Rise
@@ -75,21 +75,21 @@ SELL_TTL_SECONDS = 30 * 24 * 60 * 60  # 30 дней
 
 # Индивидуальные шаги BUY6+ для каждой пары
 BUY6_STEP_PCT = {
-    "BTC-USD": 0.003,
+    "BTC-USD": 0.002,  # Изменено: 0.2% триггер роста
     "ETH-USD": 0.004,
     "SOL-USD": 0.005,
     "OP-USD": 0.006,
-    "HYPE-USD": 0.003,
+    "HYPE-USD": 0.004,  # Изменено: 0.4% триггер роста
     "DOGE-USD": 0.008,
 }
 
 # Индивидуальные SELL‑ступени для каждой пары (три значения для лесенки продаж)
 SELL_STEPS_PCT = {
-    "BTC-USD": [0.003, 0.006, 0.009],
+    "BTC-USD": [0.003, 0.004, 0.005],  # Изменено: [0.3%, 0.4%, 0.5%]
     "ETH-USD": [0.004, 0.008, 0.012],
     "SOL-USD": [0.005, 0.010, 0.015],
     "OP-USD": [0.006, 0.012, 0.018],
-    "HYPE-USD": [0.002, 0.004, 0.006],
+    "HYPE-USD": [0.005, 0.006, 0.010],  # Изменено: [0.5%, 0.6%, 1%]
     "DOGE-USD": [0.008, 0.016, 0.024],
 }
 
